@@ -1,95 +1,100 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { initializeApp } from "firebase/app";
+import {
+  getMessaging,
+  getToken,
+  Messaging,
+  onMessage,
+} from "firebase/messaging";
+import { useEffect, useState } from "react";
+import { v4 } from "uuid";
+
+const id = v4();
+
+function requestPermission() {
+  console.log("Requesting permission...");
+  Notification.requestPermission().then((permission) => {
+    if (permission === "granted") {
+      console.log("Notification permission granted.");
+    }
+  });
+}
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDabBEarpEgoyT3cYCv4U685K_lro9aobI",
+  authDomain: "rawcaster-4d152.firebaseapp.com",
+  projectId: "rawcaster-4d152",
+  storageBucket: "rawcaster-4d152.appspot.com",
+  messagingSenderId: "1000725856320",
+  appId: "1:1000725856320:web:b62c13c87c6251cf195fa5",
+  measurementId: "G-SWGCRXDB4Z",
+};
+
+const initFB = () => {
+  const app = initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+  return messaging;
+};
 
 export default function Home() {
+  const [token, setToken] = useState("");
+  const [messaging, setMessaging] = useState<Messaging | null>(null);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const _messaging = initFB();
+      setMessaging(_messaging);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (messaging) {
+      requestPermission();
+      getToken(messaging, {
+        vapidKey:
+          "BEjbJ9p2i9RF84Okjr62JAZ_LWqVKcotzgT4EzTBTH_042-VwolQcgg5Qw8CcAwt8hLQqcobV3eDQcnHulKdeb8",
+      })
+        .then((currentToken) => {
+          console.log(currentToken);
+
+          if (currentToken) {
+            setToken(currentToken);
+          } else {
+            // Show permission request UI
+            console.log(
+              "No registration token available. Request permission to generate one."
+            );
+            // ...
+          }
+        })
+        .catch((err) => {
+          console.log("An error occurred while retrieving token. ", err);
+          // ...
+        });
+
+      onMessage(messaging, (payload) => {
+        console.log("Message received. ", payload);
+        // ...
+      });
+    }
+  });
+
+  useEffect(() => {
+    setDeviceId(id);
+  }, []);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    <div
+      style={{
+        display: "flex",
+        flex: 1,
+        flexDirection: "column",
+        gap: 50,
+        paddingTop: 50,
+      }}
+    >
+      <span>deviceToken: {`   ${token}`}</span>
+      <span>deviceId:{`   ${deviceId}`}</span>
+    </div>
   );
 }
